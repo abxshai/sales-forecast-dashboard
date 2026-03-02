@@ -145,21 +145,21 @@ export default function ForecastChart({ forecast, rows }: Props) {
 
   const filteredStageData = stageData.filter(s => activeStages.has(s.stage))
 
-  // CRM stage breakdown
+  // CRM stage breakdown — use dealValue so stages without legacy weights still show
   const crmTotals: Record<string, number> = {}
   rows.forEach(r => {
     const s = (r.status ?? '').toLowerCase().trim()
     const key =
-      s.includes('nurtur')                               ? 'nurturing'
-      : s.includes('meeting') || s.includes('scheduled') ? 'meetingScheduled'
-      : s.includes('discovery')                          ? 'discoveryComplete'
-      : s.includes('qualif')                             ? 'qualifiedToBuy'
-      : s.includes('solution') || s.includes('proposed') ? 'solutionProposed'
-      : s.includes('stuck')                              ? 'stuck'
-      : s.includes('won')                                ? 'closedWon'
-      : s.includes('lost')                               ? 'closedLost'
+      s === 'nurturing'          || s.includes('nurtur')                               ? 'nurturing'
+      : s === 'meeting scheduled' || s.includes('meeting') || s.includes('scheduled')  ? 'meetingScheduled'
+      : s === 'discovery complete'|| s.includes('discovery')                           ? 'discoveryComplete'
+      : s === 'qualified to buy'  || s.includes('qualif')                              ? 'qualifiedToBuy'
+      : s === 'solution proposed' || s.includes('solution') || s.includes('proposed')  ? 'solutionProposed'
+      : s === 'stuck'             || s.includes('stuck')                               ? 'stuck'
+      : s === 'closed won'        || s.includes('won')                                 ? 'closedWon'
+      : s === 'closed lost'       || s.includes('lost')                                ? 'closedLost'
       : null
-    if (key) crmTotals[key] = (crmTotals[key] ?? 0) + (r.weightedValue ?? 0)
+    if (key) crmTotals[key] = (crmTotals[key] ?? 0) + (r.dealValue ?? 0)
   })
   const crmStageData = CRM_STAGE_ORDER.map(k => ({
     stage: k, label: CRM_STAGE_LABELS[k], weighted: crmTotals[k] ?? 0,
@@ -336,7 +336,7 @@ export default function ForecastChart({ forecast, rows }: Props) {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold">Pipeline by CRM Stage</CardTitle>
-          <CardDescription>Weighted value per deal stage</CardDescription>
+          <CardDescription>Deal value per CRM stage</CardDescription>
           <div className="flex flex-wrap gap-1.5 pt-2">
             {CRM_STAGE_ORDER.map(key => {
               const isActive = activeCrmStages.has(key)

@@ -2,6 +2,7 @@ import type { ColumnMap, SalesRow } from '@/types'
 
 // RevOps stage weights
 export const STAGE_WEIGHTS: Record<string, number> = {
+  // Original funnel stages
   'discovery': 0.10,
   'qualified': 0.15,
   'technical validation': 0.30,
@@ -13,6 +14,14 @@ export const STAGE_WEIGHTS: Record<string, number> = {
   'commit': 0.90,
   'closed won': 1.0,
   'won': 1.0,
+  // CRM pipeline stages
+  'nurturing': 0.05,
+  'meeting scheduled': 0.10,
+  'discovery complete': 0.20,
+  'qualified to buy': 0.35,
+  'solution proposed': 0.50,
+  'stuck': 0.10,
+  'closed lost': 0,
 }
 
 export function getStageWeight(stage?: string): number {
