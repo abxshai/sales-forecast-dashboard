@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Navy / indigo dark theme ─ single source of truth */
+    --background:             0 0% 0%;         /* #000000 */
+    --foreground:             213 27% 96%;      /* #f1f5f9 */
+
+    --card:                   216 60% 10%;      /* #0a1628 */
+    --card-foreground:        213 27% 96%;
+
+    --popover:                216 60% 10%;
+    --popover-foreground:     213 27% 96%;
+
+    --primary:                221 79% 48%;      /* #1a56db — indigo */
+    --primary-foreground:     0 0% 100%;
+
+    --secondary:              216 55% 19%;      /* #162b4b — lighter inner blue */
+    --secondary-foreground:   213 27% 96%;
+
+    --muted:                  216 55% 19%;
+    --muted-foreground:       215 16% 47%;      /* #64748b */
+
+    --accent:                 221 79% 48%;      /* indigo */
+    --accent-foreground:      0 0% 100%;
+
+    --destructive:            0 63% 40%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border:                 211 56% 23%;      /* #1a3a5c */
+    --input:                  211 56% 23%;
+    --ring:                   221 79% 48%;
+
+    /* Chart palette — indigo spectrum */
+    --chart-1:  221 79% 48%;
+    --chart-2:  224 71% 60%;
+    --chart-3:  160 60% 45%;
+    --chart-4:  30  80% 55%;
+    --chart-5:  280 65% 60%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar-background:          216 60% 10%;
+    --sidebar-foreground:          213 27% 96%;
+    --sidebar-primary:             221 79% 48%;
+    --sidebar-primary-foreground:  0 0% 100%;
+    --sidebar-accent:              216 55% 14%;
+    --sidebar-accent-foreground:   213 27% 96%;
+    --sidebar-border:              211 56% 23%;
+    --sidebar-ring:                221 79% 48%;
+  }
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: "cv02","cv03","cv04","cv11";
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: hsl(var(--background)); }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary)); }
