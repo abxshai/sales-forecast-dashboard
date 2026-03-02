@@ -50,18 +50,53 @@ const STAGE_LABELS: Record<string, string> = {
   commit:              'Commit',
 }
 
+const CRM_STAGE_ORDER = [
+  'nurturing', 'meetingScheduled', 'discoveryComplete',
+  'qualifiedToBuy', 'solutionProposed', 'stuck', 'closedWon', 'closedLost',
+] as const
+const CRM_STAGE_LABELS: Record<string, string> = {
+  nurturing:         'Nurturing',
+  meetingScheduled:  'Meeting Scheduled',
+  discoveryComplete: 'Discovery Complete',
+  qualifiedToBuy:    'Qualified to Buy',
+  solutionProposed:  'Solution Proposed',
+  stuck:             'Stuck',
+  closedWon:         'Closed Won',
+  closedLost:        'Closed Lost',
+}
+const CRM_STAGE_COLORS: Record<string, string> = {
+  nurturing:         '#64748b',
+  meetingScheduled:  '#60a5fa',
+  discoveryComplete: '#22d3ee',
+  qualifiedToBuy:    '#6366f1',
+  solutionProposed:  '#a78bfa',
+  stuck:             '#f97316',
+  closedWon:         '#34d399',
+  closedLost:        '#f43f5e',
+}
+
 export default function ForecastChart({ forecast, rows }: Props) {
-  const [activeStages, setActiveStages] = useState<Set<string>>(new Set(STAGE_ORDER))
+  const [activeStages,    setActiveStages]    = useState<Set<string>>(new Set(STAGE_ORDER))
+  const [activeCrmStages, setActiveCrmStages] = useState<Set<string>>(new Set(CRM_STAGE_ORDER))
 
   const toggleStage = (key: string) => {
     setActiveStages(prev => {
       const next = new Set(prev)
       if (next.has(key)) {
-        if (next.size === 1) return prev // keep at least one active
+        if (next.size === 1) return prev
         next.delete(key)
-      } else {
-        next.add(key)
-      }
+      } else { next.add(key) }
+      return next
+    })
+  }
+
+  const toggleCrmStage = (key: string) => {
+    setActiveCrmStages(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) {
+        if (next.size === 1) return prev
+        next.delete(key)
+      } else { next.add(key) }
       return next
     })
   }
@@ -110,6 +145,30 @@ export default function ForecastChart({ forecast, rows }: Props) {
 
   const filteredStageData = stageData.filter(s => activeStages.has(s.stage))
 
+  // CRM stage breakdown
+  const crmTotals: Record<string, number> = {}
+  rows.forEach(r => {
+    const s = (r.status ?? '').toLowerCase().trim()
+    const key =
+      s.includes('nurtur')                               ? 'nurturing'
+      : s.includes('meeting') || s.includes('scheduled') ? 'meetingScheduled'
+      : s.includes('discovery')                          ? 'discoveryComplete'
+      : s.includes('qualif')                             ? 'qualifiedToBuy'
+      : s.includes('solution') || s.includes('proposed') ? 'solutionProposed'
+      : s.includes('stuck')                              ? 'stuck'
+      : s.includes('won')                                ? 'closedWon'
+      : s.includes('lost')                               ? 'closedLost'
+      : null
+    if (key) crmTotals[key] = (crmTotals[key] ?? 0) + (r.weightedValue ?? 0)
+  })
+  const crmStageData = CRM_STAGE_ORDER.map(k => ({
+    stage: k, label: CRM_STAGE_LABELS[k], weighted: crmTotals[k] ?? 0,
+  }))
+  const filteredCrmStageData = crmStageData.filter(s => activeCrmStages.has(s.stage))
+  const crmStageConfig: ChartConfig = Object.fromEntries(
+    CRM_STAGE_ORDER.map(k => [k, { label: CRM_STAGE_LABELS[k], color: CRM_STAGE_COLORS[k] }])
+  )
+
   const stageConfig: ChartConfig = Object.fromEntries(
     STAGE_ORDER.map(k => [k, { label: STAGE_LABELS[k], color: STAGE_COLORS[k] }])
   )
@@ -145,7 +204,7 @@ export default function ForecastChart({ forecast, rows }: Props) {
   if (revenueData.length === 0 && stageData.every(s => s.weighted === 0) && bucketData.length === 0) return null
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
       {/* Revenue projection */}
       {revenueData.length > 0 && (
         <Card>
@@ -272,6 +331,61 @@ export default function ForecastChart({ forecast, rows }: Props) {
           </CardContent>
         </Card>
       )}
+
+      {/* Pipeline by CRM stage */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold">Pipeline by CRM Stage</CardTitle>
+          <CardDescription>Weighted value per deal stage</CardDescription>
+          <div className="flex flex-wrap gap-1.5 pt-2">
+            {CRM_STAGE_ORDER.map(key => {
+              const isActive = activeCrmStages.has(key)
+              const color    = CRM_STAGE_COLORS[key]
+              return (
+                <button
+                  key={key}
+                  onClick={() => toggleCrmStage(key)}
+                  className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.65rem] transition-all"
+                  style={{
+                    backgroundColor: isActive ? `${color}22` : 'transparent',
+                    border: `1px solid ${isActive ? color : 'hsl(var(--border))'}`,
+                    color: isActive ? color : 'hsl(var(--muted-foreground))',
+                    opacity: isActive ? 1 : 0.45,
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full inline-block shrink-0"
+                    style={{ backgroundColor: isActive ? color : 'hsl(var(--muted-foreground))' }} />
+                  {CRM_STAGE_LABELS[key]}
+                </button>
+              )
+            })}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={crmStageConfig} className="h-[200px]">
+            <BarChart data={filteredCrmStageData} layout="vertical" margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+              <XAxis type="number" tickFormatter={v => fmt(v)} tickLine={false} axisLine={false}
+                tick={{ fontSize: 10 }} />
+              <YAxis dataKey="label" type="category" tickLine={false} axisLine={false}
+                tick={{ fontSize: 10 }} width={105} />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    formatter={(value) => [fmt(Number(value)), '']}
+                    nameKey="stage"
+                  />
+                }
+              />
+              <Bar dataKey="weighted" radius={[0, 4, 4, 0]} maxBarSize={16}>
+                {filteredCrmStageData.map((entry, i) => (
+                  <Cell key={i} fill={CRM_STAGE_COLORS[entry.stage] ?? 'hsl(var(--primary))'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
     </div>
   )
 }
